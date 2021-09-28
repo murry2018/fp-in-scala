@@ -16,6 +16,24 @@ package datastructure {
       }
       iter(this, n)
     }
+    def dropWhile(f: A => Boolean): List[A] = {
+      @tailrec
+      def iter(rest: List[A]): List[A] = {
+        rest match {
+          case Nil => Nil
+          case Cons(x, xs) =>
+            if f(x) then iter(xs) else rest
+        }
+      }
+      iter(this)
+    }
+    def init: List[A] = {
+      this match {
+        case Nil => Nil
+        case Cons(_, Nil) => Nil
+        case Cons(x, xs) => Cons(x, xs.init)
+      }
+    }
   }
   case object Nil extends List[Nothing] {
     val isEmpty = true
@@ -42,8 +60,4 @@ package datastructure {
       if (xs.isEmpty) Nil
       else Cons(xs.head, apply(xs.tail: _*))
   }
-}
-
-object Chapter3 {
-
 }

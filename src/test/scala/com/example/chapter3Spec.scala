@@ -61,4 +61,28 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
       Nil.drop(100) shouldBe Nil
     }
   }
+
+  "Exercise 3.5" should "correct" in {
+    failAfter(5 seconds) {
+      val isOdd = (_: Int) % 2 != 0
+      List(1, 3, 5, 7, 9, 10, 12, 14)
+        .dropWhile(isOdd)
+        .shouldBe(List(10, 12, 14))
+      List(1, 3, 5, 7, 9)
+        .dropWhile(isOdd)
+        .shouldBe(Nil)
+      List()
+        .dropWhile(isOdd)
+        .shouldBe(Nil)
+    }
+  }
+
+  "Exercise 3.6" should "correct" in {
+    failAfter(5 seconds) {
+      List(1,2,3,4,5).init
+        .shouldBe(List(1, 2, 3, 4))
+      List(5).init shouldBe Nil
+      Nil.init shouldBe Nil
+    }
+  }
 }
