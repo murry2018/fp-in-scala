@@ -19,6 +19,28 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
     assert(List() == Nil)
   }
 
+  "List operation" should "be covariant for its argument" in {
+    abstract class Animal
+    case class Cat(n: Int) extends Animal
+    case class Dog(n: Int) extends Animal
+
+    val cats: List[Cat] = List(new Cat(1), new Cat(2), new Cat(3))
+    val animals: List[Animal] = cats
+    assert(animals.setHead(new Dog(0)).isInstanceOf[List[Animal]])
+  }
+
+  "Numeric list operations" should "not be applied to non-numeric value" in {
+    assertCompiles("""
+      |import com.example.datastructure.{List, Cons, Nil}
+      |List(1, 2, 3, 4, 5).sum
+      |""".stripMargin)
+
+    assertTypeError("""
+      |import com.example.datastructure.{List, Cons, Nil}
+      |List("t", "e", "s", "t").sum
+      |""".stripMargin)
+  }
+
   "Exercise 3.1" should "correct" in {
     failAfter (5 seconds) {
       val x = List(1,2,3,4,5) match {
@@ -85,4 +107,5 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
       Nil.init shouldBe Nil
     }
   }
+
 }

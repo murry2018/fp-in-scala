@@ -2,6 +2,8 @@ package com.example
 
 import scala.annotation.tailrec
 
+import scala.Numeric
+
 package datastructure {
   sealed trait List[+A] {
     def isEmpty: Boolean
@@ -34,6 +36,16 @@ package datastructure {
         case Cons(x, xs) => Cons(x, xs.init)
       }
     }
+    def foldRight[B](defaultValue: B)(combine: (A, B) => B): B =
+      this match {
+        case Nil => defaultValue
+        case Cons(x, xs) =>
+          combine(x, xs.foldRight(defaultValue)(combine))
+      }
+    def sum[B >: A](implicit n: Numeric[B]): B =
+      foldRight(n.zero)(n.plus)
+    def product[B >: A](implicit n: Numeric[B]): B =
+      foldRight(n.one)(n.times)
   }
   case object Nil extends List[Nothing] {
     val isEmpty = true
