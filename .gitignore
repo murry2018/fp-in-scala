@@ -8,6 +8,8 @@ target
 project/metals.sbt
 project/project/metals.sbt
 **/com/**/com/**
+*.class
+*.tasty
 
 ### SBT ###
 # Simple Build Tool
