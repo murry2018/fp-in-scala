@@ -3,6 +3,7 @@ package com.example
 import scala.annotation.tailrec
 
 import scala.Numeric
+import scala.math.Numeric.Implicits.infixNumericOps
 
 package datastructure {
   sealed trait List[+A] {
@@ -65,25 +66,25 @@ package datastructure {
         }
         iter(self, default)
       }
-      def sum[B >: A](implicit n: Numeric[B]): B = {
+      def sum[B >: A : Numeric]: B = {
         @tailrec
         def iter(rest: List[A], result: B): B = {
           rest match {
             case Nil => result
-            case Cons(x, xs) => iter(xs, n.plus(x, result))
+            case Cons(x, xs) => iter(xs, result + x)
           }
         }
-        iter(self, n.zero)
+        iter(self, implicitly[Numeric[B]].zero)
       }
-      def product[B >: A](implicit n: Numeric[B]): B = {
+      def product[B >: A : Numeric]: B = {
         @tailrec
         def iter(rest: List[A], result: B): B = {
           rest match {
             case Nil => result
-            case Cons(x, xs) => iter(xs, n.times(x, result))
+            case Cons(x, xs) => iter(xs, result * x)
           }
         }
-        iter(self, n.one)
+        iter(self, implicitly[Numeric[B]].one)
       }
       def length: Int = {
         @tailrec
