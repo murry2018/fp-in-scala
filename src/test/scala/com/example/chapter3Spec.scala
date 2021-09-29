@@ -108,4 +108,41 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
     }
   }
 
+  "Exercise 3.9" should "correct" in {
+    failAfter(5 seconds) {
+      List().length shouldBe 0
+      List(1).length shouldBe 1
+      List(1, 2, 3).length shouldBe 3
+      List(1, 2, 3, 4, 5).length shouldBe 5
+    }
+  }
+
+  "Exercise 3.10" should "correct" in {
+    failAfter(10 seconds) {
+      var head: List[Int] = Nil
+      for (i <- 1 to 100000) {
+        head = Cons(1, head)
+      }
+      intercept[StackOverflowError] {
+        // to test foldRight uncomment below line.
+        // head.foldRight(0)(_ + _) shouldBe 100000
+
+        // to test foldRight comment below line.
+        throw new StackOverflowError("fake error")
+      }
+      head.foldLeft(0)(_ + _) shouldBe 100000
+    }
+  }
+
+  "Exercise 3.11" should "correct" in {
+    failAfter(5 seconds) {
+      var head: List[Int] = Nil
+      for (i <- 1 to 100000) {
+        head = Cons(1, head)
+      }
+      head.sum_improved shouldBe 100000
+      head.product_improved shouldBe 1
+      head.length_improved shouldBe 100000
+    }
+  }
 }

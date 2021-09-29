@@ -36,16 +36,36 @@ package datastructure {
         case Cons(x, xs) => Cons(x, xs.init)
       }
     }
+    def foldLeft[B](defaultValue: B)(combine: (B, A) => B): B = {
+      @tailrec
+      def iter(rest: List[A], result: B): B = {
+        rest match {
+          case Nil => result
+          case Cons(x, xs) => iter(xs, combine(result, x))
+        }
+      }
+      iter(this, defaultValue)
+    }
     def foldRight[B](defaultValue: B)(combine: (A, B) => B): B =
       this match {
         case Nil => defaultValue
         case Cons(x, xs) =>
           combine(x, xs.foldRight(defaultValue)(combine))
       }
+    // foldRight version
     def sum[B >: A](implicit n: Numeric[B]): B =
       foldRight(n.zero)(n.plus)
     def product[B >: A](implicit n: Numeric[B]): B =
       foldRight(n.one)(n.times)
+    def length: Int =
+      foldRight(0) { (_: A, count: Int) => count + 1 }
+    def sum_improved[B >: A](implicit n: Numeric[B]): B =
+      foldLeft(n.zero)(n.plus)
+    def product_improved[B >: A](implicit n: Numeric[B]): B =
+      foldLeft(n.one)(n.times)
+    def length_improved: Int =
+      foldLeft(0) { (count: Int, _: A) => count + 1 }
+
   }
   case object Nil extends List[Nothing] {
     val isEmpty = true
