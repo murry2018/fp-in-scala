@@ -181,4 +181,27 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
       }
     }
   }
+
+  "Exercise 3.13" should "correct" in {
+    failAfter(5 seconds) {
+      { // implement foldRight via foldLeft
+        import datastructure.Implicits.ListUtilisesFoldLeft
+        List(1, 2, 3, 4, 5).foldRight(Nil: List[Int])(Cons(_, _))
+          .shouldBe(List(1, 2, 3, 4, 5))
+      }
+      { // implement foldLeft via foldRight
+        import datastructure.Implicits.ListUtilisesFoldRight
+        List(1, 2, 3, 4, 5).foldLeft(Nil: List[Int])((acc, x) => Cons(x, acc))
+          .shouldBe(List(5, 4, 3, 2, 1))
+      }
+      { // stack-safe foldRight
+        import datastructure.Implicits.ListUtilisesFoldLeft
+        var head: List[Int] = Nil
+        for (i <- 1 to 100000) {
+          head = Cons(1, head)
+        }
+        head.foldRight(0)(_ + _) shouldBe 100000
+      }
+    }
+  }
 }

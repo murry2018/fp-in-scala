@@ -118,6 +118,18 @@ package datastructure {
         }
         iter(self, default)
       }
+      def foldRight[B](default: B)(combine: (A, B) => B): B =
+        ListUtilisesFoldLeft(ListUtilisesFoldLeft(self).reverse)
+          .foldLeft(default)((acc, x) => combine(x, acc))
+      def foldRightUnsafe[B](default: B)(combine: (A, B) => B): B = {
+        def identity(x: B): B = x
+        foldLeft(identity) {
+          (acc: B => B, x: A) => {
+            (next: B) =>
+            acc(combine(x, next))
+          }
+        }(default)
+      }
       def sum[B >: A](implicit n: Numeric[B]): B =
         foldLeft(n.zero)(n.plus)
       def product[B >: A](implicit n: Numeric[B]): B =
@@ -128,15 +140,6 @@ package datastructure {
         foldLeft(Nil: List[A]) {
           (acc: List[A], x: A) => Cons(x, acc)
         }
-      def foldRight[B](default: B)(combine: (A, B) => B): B = {
-        def identity(x: B): B = x
-        foldLeft(identity) {
-          (acc: B => B, x: A) => {
-            (next: B) =>
-            acc(combine(x, next))
-          }
-        }(default)
-      }
     }
 
     implicit class ListUtilisesFoldRight[A](self: List[A]) {
