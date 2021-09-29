@@ -8,9 +8,10 @@ import org.scalatest.concurrent.{
   TimeLimits, Signaler, ThreadSignaler
 }
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+import com.example.datastructure.ListUtilisesFoldRight
 
 class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
-  import datastructure.{List, Cons, Nil}
+  import datastructure._
 
   implicit val signaler: Signaler = ThreadSignaler
 
@@ -143,6 +144,23 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
       head.sum_improved shouldBe 100000
       head.product_improved shouldBe 1
       head.length_improved shouldBe 100000
+    }
+  }
+
+  "Exercise 3.12" should "correct" in {
+    failAfter(5 seconds) {
+      List(1, 2, 3, 4, 5).reverse
+        .shouldBe(List(5, 4, 3, 2, 1))
+      Nil.reverse
+        .shouldBe(Nil)
+      List(1, 2, 3, 4, 5).reverse_using_foldLeft
+        .shouldBe(List(5, 4, 3, 2, 1))
+      Nil.reverse_using_foldLeft
+        .shouldBe(Nil)
+      List(1, 2, 3, 4, 5).reverse_using_foldRight
+        .shouldBe(List(5, 4, 3, 2, 1))
+      Nil.reverse_using_foldRight
+        .shouldBe(Nil)
     }
   }
 }
