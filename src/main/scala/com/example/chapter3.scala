@@ -36,62 +36,6 @@ package datastructure {
         case Cons(x, xs) => Cons(x, xs.init)
       }
     }
-    def foldLeft[B](defaultValue: B)(combine: (B, A) => B): B = {
-      @tailrec
-      def iter(rest: List[A], result: B): B = {
-        rest match {
-          case Nil => result
-          case Cons(x, xs) => iter(xs, combine(result, x))
-        }
-      }
-      iter(this, defaultValue)
-    }
-    def foldRight[B](defaultValue: B)(combine: (A, B) => B): B =
-      this match {
-        case Nil => defaultValue
-        case Cons(x, xs) =>
-          combine(x, xs.foldRight(defaultValue)(combine))
-      }
-    def sum[B >: A](implicit n: Numeric[B]): B = {
-      @tailrec
-      def iter(rest: List[A], result: B): B = {
-        rest match {
-          case Nil => result
-          case Cons(x, xs) => iter(xs, n.plus(x, result))
-        }
-      }
-      iter(this, n.zero)
-    }
-    def product[B >: A](implicit n: Numeric[B]): B = {
-      @tailrec
-      def iter(rest: List[A], result: B): B = {
-        rest match {
-          case Nil => result
-          case Cons(x, xs) => iter(xs, n.times(x, result))
-        }
-      }
-      iter(this, n.one)
-    }
-    def length: Int = {
-      @tailrec
-      def iter(rest: List[A], result: Int): Int = {
-        rest match {
-          case Nil => result
-          case Cons(_, xs) => iter(xs, result+1)
-        }
-      }
-      iter(this, 0)
-    }
-    def reverse: List[A] = {
-      @tailrec
-      def iter(rest: List[A], result: List[A]): List[A] = {
-        rest match {
-          case Nil => result
-          case Cons(x, xs) => iter(xs, Cons(x, result))
-        }
-      }
-      iter(this, Nil)
-    }
   }
   case object Nil extends List[Nothing] {
     val isEmpty = true
@@ -101,57 +45,134 @@ package datastructure {
     val isEmpty = false
     override def setHead[B >: A](x: B): List[B] = Cons(x, tail)
   }
-
-  trait ListUtilisesFoldRight[A] { self: List[A] =>
-    override def sum[B >: A](implicit n: Numeric[B]): B =
-      foldRight(n.zero)(n.plus)
-    override def product[B >: A](implicit n: Numeric[B]): B =
-      foldRight(n.one)(n.times)
-    override def length: Int =
-      foldRight(0) { (_: A, count: Int) => count + 1 }
-    override def reverse: List[A] = {
-      def identity(x: List[A]): List[A] = x
-      val nil: List[A] = Nil
-      foldRight(identity){
-        (x: A, acc: (List[A]) => List[A]) => {
-          (next: List[A]) =>
-          acc(Cons(x, next))
+  object Implicits {
+    implicit class ListUtilisesRecursion[A](self: List[A]) {
+      def foldRight[B](default: B)(combine: (A, B) => B): B =
+        self match {
+          case Nil => default
+          case Cons(x, xs) =>
+            combine(x,
+              ListUtilisesRecursion(xs)
+                .foldRight(default)(combine))
         }
-      }(nil)
-    }
-  }
-  trait ListUtilisesFoldLeft[A] { self: List[A] =>
-    override def sum[B >: A](implicit n: Numeric[B]): B =
-      foldLeft(n.zero)(n.plus)
-    override def product[B >: A](implicit n: Numeric[B]): B =
-      foldLeft(n.one)(n.times)
-    override def length: Int =
-      foldLeft(0) { (count: Int, _: A) => count + 1 }
-    override def reverse: List[A] =
-      foldLeft(Nil: List[A]) {
-        (acc: List[A], x: A) => Cons(x, acc)
+      def foldLeft[B](default: B)(combine: (B, A) => B): B = {
+        @tailrec
+        def iter(rest: List[A], result: B): B = {
+          rest match {
+            case Nil => result
+            case Cons(x, xs) => iter(xs, combine(result, x))
+          }
+        }
+        iter(self, default)
       }
-  }
-  trait ListUsingStrangeFoldRight[A] { self: List[A] =>
-    override def foldRight[B](default: B)(combine: (A, B) => B): B = {
-      def identity(x: B): B = x
-      foldLeft(identity) {
-        (acc: B => B, x: A) => {
-          (next: B) =>
-          acc(combine(x, next))
+      def sum[B >: A](implicit n: Numeric[B]): B = {
+        @tailrec
+        def iter(rest: List[A], result: B): B = {
+          rest match {
+            case Nil => result
+            case Cons(x, xs) => iter(xs, n.plus(x, result))
+          }
         }
-      }(default)
+        iter(self, n.zero)
+      }
+      def product[B >: A](implicit n: Numeric[B]): B = {
+        @tailrec
+        def iter(rest: List[A], result: B): B = {
+          rest match {
+            case Nil => result
+            case Cons(x, xs) => iter(xs, n.times(x, result))
+          }
+        }
+        iter(self, n.one)
+      }
+      def length: Int = {
+        @tailrec
+        def iter(rest: List[A], result: Int): Int = {
+          rest match {
+            case Nil => result
+            case Cons(_, xs) => iter(xs, result+1)
+          }
+        }
+        iter(self, 0)
+      }
+      def reverse: List[A] = {
+        @tailrec
+        def iter(rest: List[A], result: List[A]): List[A] = {
+          rest match {
+            case Nil => result
+            case Cons(x, xs) => iter(xs, Cons(x, result))
+          }
+        }
+        iter(self, Nil)
+      }
     }
-  }
-  trait ListUsingStrangeFoldLeft[A] { self: List[A] =>
-    override def foldLeft[B](default: B)(combine: (B, A) => B): B = {
-      def identity(x: B): B = x
-      foldRight(identity) {
-        (x: A, acc: B => B) => {
-          (next: B) =>
-          acc(combine(next, x))
+
+    implicit class ListUtilisesFoldLeft[A](self: List[A]) {
+      def foldLeft[B](default: B)(combine: (B, A) => B): B = {
+        @tailrec
+        def iter(rest: List[A], result: B): B = {
+          rest match {
+            case Nil => result
+            case Cons(x, xs) => iter(xs, combine(result, x))
+          }
         }
-      }(default)
+        iter(self, default)
+      }
+      def sum[B >: A](implicit n: Numeric[B]): B =
+        foldLeft(n.zero)(n.plus)
+      def product[B >: A](implicit n: Numeric[B]): B =
+        foldLeft(n.one)(n.times)
+      def length: Int =
+        foldLeft(0) { (count: Int, _: A) => count + 1 }
+      def reverse: List[A] =
+        foldLeft(Nil: List[A]) {
+          (acc: List[A], x: A) => Cons(x, acc)
+        }
+      def foldRight[B](default: B)(combine: (A, B) => B): B = {
+        def identity(x: B): B = x
+        foldLeft(identity) {
+          (acc: B => B, x: A) => {
+            (next: B) =>
+            acc(combine(x, next))
+          }
+        }(default)
+      }
+    }
+
+    implicit class ListUtilisesFoldRight[A](self: List[A]) {
+      def foldRight[B](default: B)(combine: (A, B) => B): B =
+        self match {
+          case Nil => default
+          case Cons(x, xs) =>
+            combine(x,
+              ListUtilisesFoldRight(xs)
+                .foldRight(default)(combine))
+        }
+      def sum[B >: A](implicit n: Numeric[B]): B =
+        foldRight(n.zero)(n.plus)
+      def product[B >: A](implicit n: Numeric[B]): B =
+        foldRight(n.one)(n.times)
+      def length: Int =
+        foldRight(0) { (_: A, count: Int) => count + 1 }
+      def reverse: List[A] = {
+        def identity(x: List[A]): List[A] = x
+        val nil: List[A] = Nil
+        foldRight(identity){
+          (x: A, acc: (List[A]) => List[A]) => {
+            (next: List[A]) =>
+            acc(Cons(x, next))
+          }
+        }(nil)
+      }
+      def foldLeft[B](default: B)(combine: (B, A) => B): B = {
+        def identity(x: B): B = x
+        foldRight(identity) {
+          (x: A, acc: B => B) => {
+            (next: B) =>
+            acc(combine(next, x))
+          }
+        }(default)
+      }
     }
   }
 

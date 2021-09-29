@@ -8,7 +8,6 @@ import org.scalatest.concurrent.{
   TimeLimits, Signaler, ThreadSignaler
 }
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
-import com.example.datastructure.ListUtilisesFoldRight
 
 class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
   import datastructure._
@@ -33,11 +32,13 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
   "Numeric list operations" should "not be applied to non-numeric value" in {
     assertCompiles("""
       |import com.example.datastructure.{List, Cons, Nil}
+      |import com.example.datastructure.Implicits.ListUtilisesFoldRight
       |List(1, 2, 3, 4, 5).sum
       |""".stripMargin)
 
     assertTypeError("""
       |import com.example.datastructure.{List, Cons, Nil}
+      |import com.example.datastructure.Implicits.ListUtilisesFoldRight
       |List("t", "e", "s", "t").sum
       |""".stripMargin)
   }
@@ -111,6 +112,7 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
 
   "Exercise 3.9" should "correct" in {
     failAfter(5 seconds) {
+      import datastructure.Implicits.ListUtilisesFoldRight
       List().length shouldBe 0
       List(1).length shouldBe 1
       List(1, 2, 3).length shouldBe 3
@@ -124,43 +126,59 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
       for (i <- 1 to 100000) {
         head = Cons(1, head)
       }
-      intercept[StackOverflowError] {
-        // to test foldRight uncomment below line.
-        // head.foldRight(0)(_ + _) shouldBe 100000
+      {
+        import datastructure.Implicits.ListUtilisesFoldRight
+        intercept[StackOverflowError] {
+          // to test foldRight uncomment below line.
+          head.foldRight(0)(_ + _) shouldBe 100000
 
-        // to test foldRight comment below line.
-        throw new StackOverflowError("fake error")
+          // to test foldRight comment below line.
+          // throw new StackOverflowError("fake error")
+        }
       }
-      head.foldLeft(0)(_ + _) shouldBe 100000
+      {
+        import datastructure.Implicits.ListUtilisesFoldLeft
+        head.foldLeft(0)(_ + _) shouldBe 100000
+      }
     }
   }
 
   "Exercise 3.11" should "correct" in {
     failAfter(5 seconds) {
+      import datastructure.Implicits.ListUtilisesFoldLeft
       var head: List[Int] = Nil
       for (i <- 1 to 100000) {
         head = Cons(1, head)
       }
-      head.sum_improved shouldBe 100000
-      head.product_improved shouldBe 1
-      head.length_improved shouldBe 100000
+      head.sum shouldBe 100000
+      head.product shouldBe 1
+      head.length shouldBe 100000
     }
   }
 
   "Exercise 3.12" should "correct" in {
     failAfter(5 seconds) {
-      List(1, 2, 3, 4, 5).reverse
-        .shouldBe(List(5, 4, 3, 2, 1))
-      Nil.reverse
-        .shouldBe(Nil)
-      List(1, 2, 3, 4, 5).reverse_using_foldLeft
-        .shouldBe(List(5, 4, 3, 2, 1))
-      Nil.reverse_using_foldLeft
-        .shouldBe(Nil)
-      List(1, 2, 3, 4, 5).reverse_using_foldRight
-        .shouldBe(List(5, 4, 3, 2, 1))
-      Nil.reverse_using_foldRight
-        .shouldBe(Nil)
+      {
+        import datastructure.Implicits.ListUtilisesRecursion
+        List(1, 2, 3, 4, 5).reverse
+          .shouldBe(List(5, 4, 3, 2, 1))
+        Nil.reverse
+          .shouldBe(Nil)
+      }
+      {
+        import datastructure.Implicits.ListUtilisesFoldLeft
+        List(1, 2, 3, 4, 5).reverse
+          .shouldBe(List(5, 4, 3, 2, 1))
+        Nil.reverse
+          .shouldBe(Nil)
+      }
+      {
+        import datastructure.Implicits.ListUtilisesFoldRight
+        List(1, 2, 3, 4, 5).reverse
+          .shouldBe(List(5, 4, 3, 2, 1))
+        Nil.reverse
+          .shouldBe(Nil)
+      }
     }
   }
 }
