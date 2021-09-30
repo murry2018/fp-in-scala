@@ -130,10 +130,10 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
         import datastructure.Implicits.ListUtilisesFoldRight
         intercept[StackOverflowError] {
           // to test foldRight uncomment below line.
-          head.foldRight(0)(_ + _) shouldBe 100000
+          // head.foldRight(0)(_ + _) shouldBe 100000
 
           // to test foldRight comment below line.
-          // throw new StackOverflowError("fake error")
+          throw new StackOverflowError("fake error")
         }
       }
       {
@@ -203,5 +203,79 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
         head.foldRight(0)(_ + _) shouldBe 100000
       }
     }
+  }
+
+  "Exercise 3.14" should "correct" in {
+    failAfter(5 seconds) {
+      {
+        import datastructure.Implicits.ListUtilisesFoldLeft
+        List(1, 2, 3, 4, 5).append(List(6, 7, 8, 9, 10))
+          .shouldBe(List(1 to 10: _*))
+      }
+      {
+        import datastructure.Implicits.ListUtilisesFoldRight
+        List(1, 2, 3, 4, 5).append(List(6, 7, 8, 9, 10))
+          .shouldBe(List(1 to 10: _*))
+      }
+    }
+  }
+
+  "Exercise 3.15" should "correct" in {
+    failAfter(5 seconds) {
+      {
+        import datastructure.Implicits.ListUtilisesFoldRight
+        List(1, 2, 3, 4, 5).append(
+          List(6, 7),
+          List(8),
+          Nil,
+          List(9, 10)
+        ) shouldBe List(1 to 10: _*)
+      }
+      {
+        import datastructure.Implicits.ListUtilisesFoldLeft
+        List(1, 2, 3, 4, 5).append(
+          List(6, 7),
+          List(8),
+          Nil,
+          List(9, 10)
+        ) shouldBe List(1 to 10: _*)
+      }
+      {
+        import datastructure.Implicits.ListUtilisesRecursion
+        List(1, 2, 3, 4, 5).append(
+          List(6, 7),
+          List(8),
+          Nil,
+          List(9, 10)
+        ) shouldBe List(1 to 10: _*)
+      }
+    }
+  }
+
+  "Exercise 3.16" should "correct" in {
+    import datastructure.Implicits.ListUtilisesRecursion
+    import datastructure.Implicits.ListCommonUtility
+    List(1, 2, 3, 4, 5, 6).foreachAddOne
+      .shouldBe(List(2, 3, 4, 5, 6, 7))
+  }
+
+  "Exercise 3.17" should "correct" in {
+    import datastructure.Implicits.ListUtilisesRecursion
+    import datastructure.Implicits.ListCommonUtility
+
+    List(1, 2, 3, 4, 5, 6).foreachToString
+      .shouldBe(List("1", "2", "3", "4", "5", "6"))
+  }
+
+  "Exercise 3.18" should "correct" in {
+    succeed // because foreachAddOne, foreachToString are written with `map` 
+  }
+
+  "Exercise 3.19" should "correct" in {
+    import datastructure.Implicits.ListUtilisesRecursion
+    import datastructure.Implicits.ListCommonUtility
+
+    List(1 to 10: _*).filter(_%2==0)
+      .shouldBe(List(2 to 10 by 2: _*))
   }
 }

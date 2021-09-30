@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 
 import scala.Numeric
 import scala.math.Numeric.Implicits.infixNumericOps
+import com.example.datastructure.Implicits.ListImplicit
 
 package datastructure {
   sealed trait List[+A] {
@@ -47,7 +48,46 @@ package datastructure {
     override def setHead[B >: A](x: B): List[B] = Cons(x, tail)
   }
   object Implicits {
-    implicit class ListUtilisesRecursion[A](self: List[A]) {
+    implicit class ListCommonUtility[A](self: List[A])
+      (implicit util: List[A] => ListImplicit[A]) {
+      def map[B](f: A => B): List[B] = {
+        @tailrec
+        def iter(rest: List[A], result: List[B]): List[B] = {
+          rest match {
+            case Nil => result
+            case Cons(x, xs) => iter(xs, Cons(f(x), result))
+          }
+        }
+        iter(util(self).reverse, Nil)
+      }
+      def foreachAddOne(implicit num: Numeric[A]): List[A] =
+        map(_+ num.one)
+      def foreachToString: List[String] =
+        map(_.toString)
+      def filter(predicate: A => Boolean): List[A] = {
+        @tailrec
+        def iter(rest: List[A], result: List[A]): List[A] = {
+          rest match {
+            case Nil => result
+            case Cons(x, xs) if predicate(x) =>
+              iter(xs, Cons(x, result))
+            case Cons(_, xs) => iter(xs, result)
+          }
+        }
+        iter(util(self).reverse, Nil)
+      }
+    }
+
+    sealed trait ListImplicit[A] {
+      def foldRight[B](default: B)(combine: (A, B) => B): B
+      def foldLeft[B](default: B)(combine: (B, A) => B): B
+      def sum(implicit n: Numeric[A]): A
+      def product(implicit n: Numeric[A]): A
+      def length: Int
+      def reverse: List[A]
+      def append(lists: List[A]*): List[A]
+    }
+    implicit class ListUtilisesRecursion[A](self: List[A]) extends ListImplicit[A]{
       def foldRight[B](default: B)(combine: (A, B) => B): B =
         self match {
           case Nil => default
@@ -66,25 +106,25 @@ package datastructure {
         }
         iter(self, default)
       }
-      def sum[B >: A : Numeric]: B = {
+      def sum(implicit n: Numeric[A]): A = {
         @tailrec
-        def iter(rest: List[A], result: B): B = {
+        def iter(rest: List[A], result: A): A = {
           rest match {
             case Nil => result
             case Cons(x, xs) => iter(xs, result + x)
           }
         }
-        iter(self, implicitly[Numeric[B]].zero)
+        iter(self, n.zero)
       }
-      def product[B >: A : Numeric]: B = {
+      def product(implicit n: Numeric[A]): A = {
         @tailrec
-        def iter(rest: List[A], result: B): B = {
+        def iter(rest: List[A], result: A): A = {
           rest match {
             case Nil => result
             case Cons(x, xs) => iter(xs, result * x)
           }
         }
-        iter(self, implicitly[Numeric[B]].one)
+        iter(self, n.one)
       }
       def length: Int = {
         @tailrec
@@ -106,9 +146,22 @@ package datastructure {
         }
         iter(self, Nil)
       }
+      private def appendOne(xs: List[A]): List[A] = {
+        ListUtilisesRecursion(this.reverse)
+          .foldLeft(xs)((acc, x) => Cons(x, acc))
+      }
+      def append(lists: List[A]*): List[A] = {
+        val ls: List[List[A]] = List(lists: _*)
+        appendOne {
+          ListUtilisesRecursion(ListUtilisesRecursion(ls).reverse)
+            .foldLeft(Nil: List[A]){
+              (acc, cur) => ListUtilisesRecursion(cur).appendOne(acc)
+            }
+        }
+      }
     }
 
-    implicit class ListUtilisesFoldLeft[A](self: List[A]) {
+    implicit class ListUtilisesFoldLeft[A](self: List[A]) extends ListImplicit[A]{
       def foldLeft[B](default: B)(combine: (B, A) => B): B = {
         @tailrec
         def iter(rest: List[A], result: B): B = {
@@ -131,9 +184,9 @@ package datastructure {
           }
         }(default)
       }
-      def sum[B >: A](implicit n: Numeric[B]): B =
+      def sum(implicit n: Numeric[A]): A =
         foldLeft(n.zero)(n.plus)
-      def product[B >: A](implicit n: Numeric[B]): B =
+      def product(implicit n: Numeric[A]): A =
         foldLeft(n.one)(n.times)
       def length: Int =
         foldLeft(0) { (count: Int, _: A) => count + 1 }
@@ -141,9 +194,22 @@ package datastructure {
         foldLeft(Nil: List[A]) {
           (acc: List[A], x: A) => Cons(x, acc)
         }
+      private def appendOne(xs: List[A]): List[A] = {
+        ListUtilisesFoldLeft(this.reverse)
+          .foldLeft(xs)((acc, x) => Cons(x, acc))
+      }
+      def append(lists: List[A]*): List[A] = {
+        val ls: List[List[A]] = List(lists: _*)
+        appendOne {
+          ListUtilisesFoldLeft(ListUtilisesFoldLeft(ls).reverse)
+            .foldLeft(Nil: List[A]){
+              (acc, cur) => ListUtilisesFoldLeft(cur).appendOne(acc)
+            }
+        }
+      }
     }
 
-    implicit class ListUtilisesFoldRight[A](self: List[A]) {
+    implicit class ListUtilisesFoldRight[A](self: List[A]) extends ListImplicit[A] {
       def foldRight[B](default: B)(combine: (A, B) => B): B =
         self match {
           case Nil => default
@@ -152,9 +218,9 @@ package datastructure {
               ListUtilisesFoldRight(xs)
                 .foldRight(default)(combine))
         }
-      def sum[B >: A](implicit n: Numeric[B]): B =
+      def sum(implicit n: Numeric[A]): A =
         foldRight(n.zero)(n.plus)
-      def product[B >: A](implicit n: Numeric[B]): B =
+      def product(implicit n: Numeric[A]): A =
         foldRight(n.one)(n.times)
       def length: Int =
         foldRight(0) { (_: A, count: Int) => count + 1 }
@@ -167,6 +233,18 @@ package datastructure {
             acc(Cons(x, next))
           }
         }(nil)
+      }
+      private def appendOne(xs: List[A]): List[A] =
+        foldRight(xs)(Cons(_, _))
+      def append(lists: List[A]*): List[A] = {
+        val ls: List[List[A]] = List(lists: _*)
+        val acc: List[A] =
+          ListUtilisesFoldRight(ls)
+            .foldRight(Nil: List[A]){
+              (cur, acc) =>
+              ListUtilisesFoldRight(cur).appendOne(acc)
+            }
+        appendOne(acc)
       }
       def foldLeft[B](default: B)(combine: (B, A) => B): B = {
         def identity(x: B): B = x
