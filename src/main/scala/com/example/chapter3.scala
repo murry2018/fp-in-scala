@@ -76,6 +76,35 @@ package datastructure {
         }
         iter(util(self).reverse, Nil)
       }
+      def flatMap[B](f: A => List[B])
+        (implicit utilB: List[B] => ListImplicit[B]): List[B] = {
+        util(self).foldRight(Nil: List[B]) {
+          (item: A, acc: List[B]) => utilB(f(item)).append(acc)
+        }
+      }
+      def filterViaFlatMap(predicate: A => Boolean): List[A] = {
+        flatMap {
+          (x: A) => predicate(x) match {
+            case true => Cons(x, Nil)
+            case false => Nil
+          }
+        }
+      }
+      def addAnother[B >: A : Numeric](another: List[B])
+        (implicit utilB: List[B] => ListImplicit[B]): List[B] =
+        zipWith((_: B) + (_: B))(another)
+      def zipWith[B, C](zip: (A, B) => C)(another: List[B])
+          (implicit utilC: List[C] => ListImplicit[C]): List[C] = {
+        @tailrec
+        def iter(nextA: List[A], nextB: List[B], result: List[C]): List[C] = {
+          (nextA, nextB) match {
+            case (Cons(x, xs), Cons(y, ys)) =>
+              iter(xs, ys, Cons(zip(x, y), result))
+            case _ => result
+          }
+        }
+        utilC(iter(self, another, Nil)).reverse
+      }
     }
 
     sealed trait ListImplicit[A] {
@@ -275,3 +304,62 @@ package datastructure {
       else Cons(xs.head, apply(xs.tail: _*))
   }
 }
+
+object Chapter3 {
+  implicit class ListUtil[A](self: List[A]) {
+    def hasSubsequence(l: List[A]): Boolean = {
+      val n = l.length
+      self.scanRight(Nil: List[A])(_ :: _)
+        .exists(xs => xs.take(n) == l)
+    }
+  }
+
+  sealed trait Tree[+A] {
+    def size: Int
+    def maximum[B >: A]
+      (implicit orderer: B => Ordered[B]): B
+    def depth: Int
+    def map[B](f: A => B): Tree[B]
+    def fold[B](valueMapper: A => B)(combine: (B, B) => B): B
+  }
+  case class Leaf[A](value: A) extends Tree[A] {
+    val size: Int = 1
+    def maximum[B >: A]
+      (implicit orderer: B => Ordered[B]): B = value
+    val depth: Int = 1
+    def map[B](f: A => B): Tree[B] = Leaf(f(value))
+    def fold[B](valueMapper: A => B)(combine: (B, B) => B): B =
+      valueMapper(value)
+  }
+  case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A] {
+    lazy val size: Int = { 1 + left.size + right.size }
+    def maximum[B >: A]
+      (implicit orderer: B => Ordered[B]): B = {
+      val leftMax = left.maximum
+      val rightMax = right.maximum
+      if orderer(leftMax) > rightMax then leftMax else rightMax
+    }
+    lazy val depth: Int = { (left.depth max right.depth) + 1 }
+    def map[B](f: A => B): Tree[B] = Branch(left.map(f), right.map(f))
+    def fold[B](valueMapper: A => B)(combine: (B, B) => B): B =
+      combine(left.fold(valueMapper)(combine), right.fold(valueMapper)(combine))
+  }
+
+  def treeSize[A](tree: Tree[A]): Int = {
+    tree.fold(_ => 1)(_ + _ + 1)
+  }
+  def maximum[A](tree: Tree[A])
+    (implicit orderer: A => Ordered[A]): A = {
+    tree.fold(x => x) {
+      (leftResult: A, rightResult: A) =>
+      if orderer(leftResult) > rightResult then leftResult else rightResult
+    }
+  }
+  def depth[A](tree: Tree[A]): Int = {
+    tree.fold(x => 1) {
+      (leftResult: Int, rightResult: Int) =>
+      (leftResult max rightResult) + 1
+    }
+  }
+}
+

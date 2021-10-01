@@ -278,4 +278,162 @@ class Chapter3Spec extends AnyFlatSpec with Matchers with TimeLimits {
     List(1 to 10: _*).filter(_%2==0)
       .shouldBe(List(2 to 10 by 2: _*))
   }
+
+  "Exercise 3.20" should "correct" in {
+    import datastructure.Implicits.ListUtilisesRecursion
+    import datastructure.Implicits.ListCommonUtility
+
+    val sections = for {
+      chapter <- List(1, 2, 3, 4, 5)
+      section <- List('a', 'b', 'c')
+    } yield s"$chapter$section"
+    sections.shouldBe (
+      List("1a", "1b", "1c",
+        "2a", "2b", "2c",
+        "3a", "3b", "3c",
+        "4a", "4b", "4c",
+        "5a", "5b", "5c")
+    )
+  }
+
+  "Exercise 3.21" should "correct" in {
+    import datastructure.Implicits.ListUtilisesRecursion
+    import datastructure.Implicits.ListCommonUtility
+
+    List(1 to 10: _*).filterViaFlatMap(_%2==0)
+      .shouldBe(List(2 to 10 by 2: _*))
+
+  }
+
+  "Exercise 3.22" should "correct" in {
+    import datastructure.Implicits.ListUtilisesRecursion
+    import datastructure.Implicits.ListCommonUtility
+
+    val xs: List[Int] = List(1 to 10: _*)
+    val ys: List[Int] = List(-1 to -10 by -1: _*)
+    xs.addAnother(ys)
+      .shouldBe(List((for (i <- 1 to 10) yield 0): _*))
+  }
+
+  "Exercise 3.23" should "correct" in {
+    import datastructure.Implicits.ListUtilisesRecursion
+    import datastructure.Implicits.ListCommonUtility
+
+    List(1 to 3: _*).zipWith((_, _))(List('a' to 'z': _*))
+      .shouldBe(List((1, 'a'), (2, 'b'), (3, 'c')))
+  }
+
+  "Exercise 3.24" should "correct" in {
+    import scala.List
+    import Chapter3.ListUtil
+
+    assert(List(1, 2, 3, 4).hasSubsequence(List(1, 2)))
+    assert(List(1, 2, 3, 4).hasSubsequence(List(2, 3)))
+    assert(List(1, 2, 3, 4).hasSubsequence(List(4)))
+  }
+
+  trait TreeFixture {
+    import Chapter3.{Tree, Leaf, Branch}
+    val numericTree: Tree[Int] =
+      Branch(
+        Branch(
+          Leaf(1), Leaf(2)),
+        Branch(
+          Leaf(3),
+          Branch(
+            Branch(
+              Leaf(4),
+              Leaf(5)
+            ),
+            Leaf(6))))
+    val stringTree: Tree[String] =
+      Branch(
+        Leaf(".gitignore"),
+        Branch(
+          Branch(
+            Branch(
+              Branch(
+                Leaf("example"),
+                Leaf("target")),
+              Leaf("com")),
+            Leaf("scala")),
+          Branch(
+            Leaf("item1"), Leaf("item2"))))
+  }
+
+  trait TreeFixturePropertyAnswer {
+    val numericTreeSize: Int = 11
+    val numericTreeMax: Int = 6
+    val numericTreeDepth: Int = 5
+
+    val stringTreeSize: Int = 13
+    val stringTreeMax: String = "target"
+    val stringTreeDepth: Int = 6
+  }
+
+  "Exercise 3.25, 3.26, 3.27" should "correct"  in new TreeFixture
+      with TreeFixturePropertyAnswer {
+    import Chapter3._
+    import scala.language.implicitConversions
+
+    numericTree.size shouldBe numericTreeSize
+    numericTree.maximum shouldBe numericTreeMax
+    numericTree.depth shouldBe numericTreeDepth
+
+    stringTree.size shouldBe stringTreeSize
+    stringTree.maximum shouldBe stringTreeMax
+    stringTree.depth shouldBe stringTreeDepth
+  }
+
+  trait TreeFixtureMappingAnswer {
+    import Chapter3.{Tree, Leaf, Branch}
+    val numericTreeMapToString: Tree[String] =
+      Branch(
+        Branch(
+          Leaf("1"), Leaf("2")),
+        Branch(
+          Leaf("3"),
+          Branch(
+            Branch(
+              Leaf("4"),
+              Leaf("5")
+            ),
+            Leaf("6"))))
+    val stringTreeMapLength: Tree[Int] =
+      Branch(
+        Leaf(".gitignore".length),
+        Branch(
+          Branch(
+            Branch(
+              Branch(
+                Leaf("example".length),
+                Leaf("target".length)),
+              Leaf("com".length)),
+            Leaf("scala".length)),
+          Branch(
+            Leaf("item1".length), Leaf("item2".length))))
+  }
+
+  "Exercise 3.28" should "correct" in new TreeFixture
+      with TreeFixtureMappingAnswer {
+    import Chapter3._
+
+    numericTree.map(_.toString)
+      .shouldBe(numericTreeMapToString)
+    stringTree.map(_.length)
+      .shouldBe(stringTreeMapLength)
+  }
+
+  "Exercise 3.29" should "correct" in new TreeFixture
+      with TreeFixturePropertyAnswer {
+    import Chapter3._
+
+    treeSize(numericTree) shouldBe numericTreeSize
+    maximum(numericTree) shouldBe numericTreeMax
+    depth(numericTree) shouldBe numericTreeDepth
+
+    treeSize(stringTree) shouldBe stringTreeSize
+    maximum(stringTree) shouldBe stringTreeMax
+    depth(stringTree) shouldBe stringTreeDepth
+  }
 }
